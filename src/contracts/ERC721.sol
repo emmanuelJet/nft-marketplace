@@ -14,11 +14,18 @@ building out mining function:
 contract ERC721 {
   mapping (uint256 => address) private _tokenOwner;
   mapping (address => uint256) private _ownedTokensCount;
+  mapping (uint256 => address) private _tokenApprovals;
 
   event Transfer(
     address indexed from,
     address indexed to,
-    uint256 indexed tokenID
+    uint256 indexed tokenId
+  );
+
+  event Approval(
+    address indexed owner,
+    address indexed approved,
+    uint256 indexed tokenId
   );
 
   function balanceOf(address _owner) public view returns(uint256 balance) {
@@ -32,8 +39,8 @@ contract ERC721 {
     return _owner;
   }
 
-  function _tokenExist(uint256 _tokenID) internal view returns(bool exist) {
-    address _owner = _tokenOwner[_tokenID];
+  function _tokenExist(uint256 _tokenId) internal view returns(bool exist) {
+    address _owner = _tokenOwner[_tokenId];
 
     return _owner != address(0);
   }
@@ -46,5 +53,40 @@ contract ERC721 {
     _ownedTokensCount[_to] += 1;
 
     emit Transfer(address(0), _to, _tokenId);
+  }
+
+  function _transferFrom(address _from, address _to, uint256 _tokenId) internal {
+    require(_to != address(0), "ERC721: transfer to the zero address");
+    require(ownerOf(_tokenId) == _from, "ERC721: Trying to transfer an unowned token"");
+
+    _ownedTokensCount[_from] -= 1;
+    _ownedTokensCount[_to] += 1;
+
+    _tokenOwner[_tokenId] = _to;
+
+    emit Transfer(_from, _to, _tokenId);
+  }
+
+  function transferFrom(address _from, address _to, uint256 _tokenId) public {
+    require(isApprovedOrOwner(msg.sender, _tokenId));
+    _transferFrom(_from, _to, _tokenId);
+  }
+
+  function approve(address _to, uint256 _tokenId) public {
+    address _owner = ownerOf(_tokenId);
+
+    require(_to != _owner, "Error - Approval to Current Owner");
+    require(msg.sender == _owner, "Current Caller is not the token owner");
+
+    _tokenApprovals(_tokenId) = _to;
+
+    emit Approval(_owner, _to, _tokenId);
+  }
+
+  function isApprovedOrOwner(address _spender, uint256 _tokenId) internal view returns(bool status) {
+    require(_tokenExist(_tokenId), "ERC721: Token does not exist");
+
+    address _owner = ownerOf(_tokenId);
+    return (_spender == _owner);
   }
 }
