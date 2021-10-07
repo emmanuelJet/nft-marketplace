@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import './ERC721.sol';
+import './interfaces/IERC721Enumerable.sol';
 
-contract ERC721Enumerable is ERC721 {
+contract ERC721Enumerable is ERC721, IERC721Enumerable {
   uint256[] private _allTokens;
 
   // Mapping from tokenId to position on _allTokens array
@@ -13,16 +14,24 @@ contract ERC721Enumerable is ERC721 {
   // Mapping from tokenId index of the owner tokens list
   mapping (uint256 => uint256) private _ownedTokensIndex;
 
-  function totalSupply() view public returns (uint supply) {
+  constructor () {
+    _registerInterface(bytes4(
+      keccak256('totalSupply(bytes4)')^
+      keccak256('tokenByIndex(bytes4)')^
+      keccak256('tokenOfOwnerByIndex(bytes4)')
+    ));
+  }
+
+  function totalSupply() view override public returns (uint supply) {
     return _allTokens.length;
   }
 
-  function tokenByIndex(uint256 _index) view public returns (uint256 tokenId) {
+  function tokenByIndex(uint256 _index) view override public returns (uint256 tokenId) {
     require(_index <= totalSupply(), "Global token index is out of bounds!");
     return _allTokens[_index];
   }
 
-  function tokenOfOwnerByIndex(address _owner, uint256 _index) view public returns (uint256 ownerTokenId) {
+  function tokenOfOwnerByIndex(address _owner, uint256 _index) view override public returns (uint256 ownerTokenId) {
     require(_index <= balanceOf(_owner), "Owner token index is out of bounds!");
     return _ownedTokens[_owner][_index];
   }

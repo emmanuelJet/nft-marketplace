@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import './ERC165.sol';
+import './interfaces/IERC721.sol';
+
 /*
 building out mining function:
   a. nft points to an address
@@ -11,29 +14,25 @@ building out mining function:
      contract address, where it is being minted to, the id
 */
 
-contract ERC721 {
+contract ERC721 is ERC165, IERC721 {
   mapping (uint256 => address) private _tokenOwner;
   mapping (address => uint256) private _ownedTokensCount;
   mapping (uint256 => address) private _tokenApprovals;
 
-  event Transfer(
-    address indexed from,
-    address indexed to,
-    uint256 indexed tokenId
-  );
+  constructor () {
+    _registerInterface(bytes4(
+      keccak256('balanceOf(bytes4)')^
+      keccak256('ownerOf(bytes4)')^
+      keccak256('transferFrom(bytes4)')
+    ));
+  }
 
-  event Approval(
-    address indexed owner,
-    address indexed approved,
-    uint256 indexed tokenId
-  );
-
-  function balanceOf(address _owner) public view returns(uint256 balance) {
+  function balanceOf(address _owner) public override view returns(uint256 balance) {
     require(_owner != address(0), "ERC721: balance to the zero address");
     return _ownedTokensCount[_owner];
   }
 
-  function ownerOf(uint256 _tokenId) public view returns(address owner) {
+  function ownerOf(uint256 _tokenId) public override view returns(address owner) {
     address _owner = _tokenOwner[_tokenId];
     require(_owner != address(0), "ERC721: owner to the zero address");
     return _owner;
@@ -57,7 +56,7 @@ contract ERC721 {
 
   function _transferFrom(address _from, address _to, uint256 _tokenId) internal {
     require(_to != address(0), "ERC721: transfer to the zero address");
-    require(ownerOf(_tokenId) == _from, "ERC721: Trying to transfer an unowned token"");
+    require(ownerOf(_tokenId) == _from, "ERC721: Trying to transfer an unowned token");
 
     _ownedTokensCount[_from] -= 1;
     _ownedTokensCount[_to] += 1;
@@ -67,7 +66,7 @@ contract ERC721 {
     emit Transfer(_from, _to, _tokenId);
   }
 
-  function transferFrom(address _from, address _to, uint256 _tokenId) public {
+  function transferFrom(address _from, address _to, uint256 _tokenId) public override {
     require(isApprovedOrOwner(msg.sender, _tokenId));
     _transferFrom(_from, _to, _tokenId);
   }
@@ -78,7 +77,7 @@ contract ERC721 {
     require(_to != _owner, "Error - Approval to Current Owner");
     require(msg.sender == _owner, "Current Caller is not the token owner");
 
-    _tokenApprovals(_tokenId) = _to;
+    _tokenApprovals[_tokenId] = _to;
 
     emit Approval(_owner, _to, _tokenId);
   }
