@@ -45,7 +45,7 @@ contract("KryptoBird", function (accounts) {
 				expectedResult.push(`JET${i}`);
 
         // Success
-        assert.equal(elementEvent._from, '0x0000000000000000000000000000000000000000','contact _from');
+        assert.equal(elementEvent._from, '0x0000000000000000000000000000000000000000', 'contact _from');
         assert.equal(elementEvent._to, accounts[0], 'contract _to');
 
         // Failure
